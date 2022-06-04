@@ -37,11 +37,13 @@ class WSGIServer(sbn.Kernel):
         self.application = application
 
     def act(self):
-        self._serve_forever()
+        self._serve_run()
 
-    def _serve_forever(self):
+    def react(self, child):
+        self._serve_run()
+
+    def _serve_run(self):
         listen_socket = self.listen_socket
-        print('>>>> Python (WSGI Server) [DEBUG]: Socket - %s' % listen_socket, file=open('wsgisbn.log', 'a'))
         while True:
             print('>>>> Python (WSGI Server) [DEBUG]: Waiting connection', file=open('wsgisbn.log', 'a'))
             #sbn.sleep(1000)
@@ -54,6 +56,7 @@ class WSGIServer(sbn.Kernel):
             # loop over to wait for another client connection
             print('>>>> Python (WSGI Server) [INFO]: Connection from %s:%s' % client_address, file=open('wsgisbn.log', 'a'))
             self._handle_request(client_connection)
+            break # TODO
 
     def _handle_request(self, client_connection):
         worker = WSGIWorker(client_connection, self.application, self.server_name, self.server_port)
