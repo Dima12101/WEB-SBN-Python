@@ -52,7 +52,7 @@ class WSGIServer(sbn.Kernel):
                 print('>>>> Python (WSGI Server) [ERROR]: %s' % e, file=open('wsgisbn.log', 'a'))
             # Handle one request and close the client connection. Then
             # loop over to wait for another client connection
-            print('>>>> Python (WSGI Server) [INFO]: Connection from %s' % client_address, file=open('wsgisbn.log', 'a'))
+            print('>>>> Python (WSGI Server) [INFO]: Connection from %s:%s' % client_address, file=open('wsgisbn.log', 'a'))
             self._handle_request(client_connection)
 
     def _handle_request(self, client_connection):

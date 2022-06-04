@@ -20,10 +20,9 @@ class Main(sbn.Kernel):
         except Exception as e:
             print('>>>> Python (WSGI Main) [ERROR]: %s' % e, file=open('wsgisbn.log', 'a'))
         super(Main, self).__init__(*args, **kwargs)
-        print('>>>> Python (WSGI Main) [INFO]: ============= program init! =============', file=open('wsgisbn.log', 'a'))
 
     def act(self):
-        print('>>>> Python (WSGI Main) [INFO]: ============= program start! =============', file=open('wsgisbn.log', 'a'))
+        print('\n>>>> Python (WSGI Main) [INFO]: ============= program start! =============', file=open('wsgisbn.log', 'a'))
         httpd = WSGIServer(SERVER_ADDRESS, self.application)
         httpd.enable_carries_parent()  # carries_parent
         print('>>>> Python (WSGI Main) [INFO]: Serving HTTP on port %s ...' % PORT, file=open('wsgisbn.log', 'a'))
