@@ -19,7 +19,7 @@ class Main(sbn.Kernel):
             
         httpd = WSGIServer(SERVER_ADDRESS, self.application)
         httpd.enable_carries_parent()  # carries_parent
-        print(f'>>>> Python (WSGI Main): Serving HTTP on port {PORT} ...\n', file=open('wsgisbn.log', 'a'))
+        print('>>>> Python (WSGI Main): Serving HTTP on port %s ...\n' % PORT, file=open('wsgisbn.log', 'a'))
         sbn.upstream(self, httpd, target=sbn.Target.Remote)
  
     def react(self, child: sbn.Kernel):

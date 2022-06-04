@@ -38,7 +38,7 @@ class WSGIWorker(sbn.Kernel):
         request_data = self.client_connection.recv(1024).decode('utf-8')
         # Print formatted request data a la 'curl -v'
         print(''.join(
-            f'< {line}\n' for line in request_data.splitlines()
+            '< %s\n' % line for line in request_data.splitlines()
         ))
         return request_data
 
@@ -59,7 +59,7 @@ class WSGIWorker(sbn.Kernel):
         env['wsgi.input']        = io.StringIO(self.request_data)
         env['wsgi.errors']       = sys.stderr
         env['wsgi.multithread']  = False
-        env['wsgi.multiprocess'] = False
+        env['wsgi.multiprocess'] = True
         env['wsgi.run_once']     = False
         # Required CGI variables
         env['REQUEST_METHOD']    = self.request_method    # GET
@@ -83,7 +83,7 @@ class WSGIWorker(sbn.Kernel):
     def finish_response(self, result):
         try:
             status, response_headers = self.headers_set
-            response = f'HTTP/1.1 {status}\r\n'
+            response = 'HTTP/1.1 %s\r\n' % status
             for header in response_headers:
                 response += '{0}: {1}\r\n'.format(*header)
             response += '\r\n'
@@ -91,7 +91,7 @@ class WSGIWorker(sbn.Kernel):
                 response += data.decode('utf-8')
             # Print formatted response data a la 'curl -v'
             print(''.join(
-                f'> {line}\n' for line in response.splitlines()
+                '> %s\n' % line for line in response.splitlines()
             ))
             response_bytes = response.encode()
             self.client_connection.sendall(response_bytes)
