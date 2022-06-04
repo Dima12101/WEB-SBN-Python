@@ -1,8 +1,11 @@
 import os
 import sys
+import importlib
 import sbn
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+cwd = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(cwd)
+sys.path.append(os.path.dirname(cwd))
 from server import WSGIServer
 
 SERVER_ADDRESS = (HOST, PORT) = '', 8888
@@ -15,10 +18,11 @@ class Main(sbn.Kernel):
             sys.exit()
         module, application = sys.argv[1].split(':')
         try:
-            self.module = __import__(module)
+            self.module = importlib.import_module(module)
             self.application = getattr(self.module, application)
         except Exception as e:
             print('>>>> Python (WSGI Main) [ERROR]: %s' % e, file=open('wsgisbn.log', 'a'))
+            sys.exit()
         super(Main, self).__init__(*args, **kwargs)
 
     def act(self):
