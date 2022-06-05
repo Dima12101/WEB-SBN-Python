@@ -16,7 +16,9 @@ class Main(sbn.Kernel):
         if len(sys.argv) < 2:
             print('>>>> Python (WSGI Main) [ERROR]: Provide a WSGI application object as module:callable', file=open('wsgisbn.log', 'a'))
             sys.exit()
-        module, application = sys.argv[1].split(':')
+        self.app_path = sys.argv[1]
+        module, application = self.app_path.split(':')
+
         try:
             self.module = importlib.import_module(module)
             self.application = getattr(self.module, application)
@@ -27,9 +29,10 @@ class Main(sbn.Kernel):
 
     def act(self):
         print('\n>>>> Python (WSGI Main) [INFO]: ============= program start! =============', file=open('wsgisbn.log', 'a'))
+        print('>>>> Python (WSGI Main) [INFO]: App - %s' % self.app_path, file=open('wsgisbn.log', 'a'))
         httpd = WSGIServer(SERVER_ADDRESS, self.application)
         httpd.enable_carries_parent()  # carries_parent
-        print('>>>> Python (WSGI Main) [INFO]: Serving HTTP on port %s ...' % PORT, file=open('wsgisbn.log', 'a'))
+        print('>>>> Python (WSGI Main) [INFO]: Serving HTTP on %s:%s ...' % (httpd.server_name, httpd.server_port), file=open('wsgisbn.log', 'a'))
         sbn.upstream(self, httpd, target=sbn.Target.Remote)
 
     def react(self, child: sbn.Kernel):

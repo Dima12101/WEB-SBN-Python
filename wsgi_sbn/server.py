@@ -17,13 +17,14 @@ class WSGIServer(sbn.Kernel):
     def _create_server(self, server_address):
         listen_socket = socket.create_server(
             server_address, family=self.address_family, backlog=self.request_queue_size, reuse_port=True)
-        
+
         self.listen_socket_args = get_socket_args(listen_socket)
-        
-        # Get socket settings
+
         host, port = listen_socket.getsockname()[:2]
         self.server_name = socket.getfqdn(host)
         self.server_port = port
+
+        listen_socket.detach()
 
     def act(self):
         self._serve_run()
@@ -32,7 +33,8 @@ class WSGIServer(sbn.Kernel):
         self._serve_run()
 
     def _serve_run(self):
-        listen_socket = init_socket(self.listen_socket_args)
+        try:                                                                                                                                                                                                       listen_socket = init_socket(self.listen_socket_args)
+        except Exception as e:                                                                                                                                                                                     print('>>>> Python (WSGI Server) [ERROR]: %s' % e, file=open('wsgisbn.log', 'a'))
         while True:
             print('>>>> Python (WSGI Server) [DEBUG]: Waiting connection', file=open('wsgisbn.log', 'a'))
             try:
@@ -43,6 +45,7 @@ class WSGIServer(sbn.Kernel):
             # loop over to wait for another client connection
             print('>>>> Python (WSGI Server) [INFO]: Connection from %s:%s' % client_address, file=open('wsgisbn.log', 'a'))
             self._handle_request(client_connection)
+            client_connection.detach()
             break # TODO
 
     def _handle_request(self, client_connection):
