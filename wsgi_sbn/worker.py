@@ -3,11 +3,12 @@ import io
 import sys
 import sbn
 from datetime import datetime
+from utils import init_socket
 
 class WSGIWorker(sbn.Kernel):
 
-    def __init__(self, client_connection, application, server_name, server_port):
-        self.client_connection = client_connection
+    def __init__(self, client_socket_args, application, server_name, server_port):
+        self.client_socket_args = client_socket_args
         self.application = application
         self.server_name = server_name
         self.server_port = server_port
@@ -15,8 +16,9 @@ class WSGIWorker(sbn.Kernel):
 
     def act(self):
         print('>>>> Python (WSGI Worker) [DEBUG]: Start handling request', file=open('wsgisbn.log', 'a'))
+        client = init_socket(self.client_socket_args)
         # Read the request
-        self.request_data = self._read_request()
+        self.request_data = self._read_request(client)
 
         # Break down the request line into components
         (self.request_method,  # GET
@@ -34,12 +36,12 @@ class WSGIWorker(sbn.Kernel):
         print('>>>> Python (WSGI Worker) [DEBUG]: Result=%s' % self.result, file=open('wsgisbn.log', 'a'))
 
         # Construct a response and send it back to the client
-        self._finish_response(self.result)
+        self._finish_response(client, self.result)
 
         sbn.commit(self, target=sbn.Target.Remote)
 
-    def _read_request(self):
-        request_data = self.client_connection.recv(1024).decode('utf-8')
+    def _read_request(self, client):
+        request_data = client.recv(1024).decode('utf-8')
         # Print formatted request data a la 'curl -v'
         print('>>>> Python (WSGI Worker) [INFO]: Request data' + ''.join(
             '\n< %s' % line for line in request_data.splitlines()
@@ -72,7 +74,7 @@ class WSGIWorker(sbn.Kernel):
         env['SERVER_PORT']       = str(self.server_port)  # 8888
         return env
 
-    def _start_response(self, status, response_headers, exc_info=None):
+    def _start_response(self, status, response_headers):
         # Add necessary server headers
         server_headers = [
             ('Date', datetime.now().strftime("%c")),
@@ -80,11 +82,9 @@ class WSGIWorker(sbn.Kernel):
         ]
         self.headers_set = [status, response_headers + server_headers]
         # To adhere to WSGI specification the start_response must return
-        # a 'write' callable. We simplicity's sake we'll ignore that detail
-        # for now.
-        # return self.finish_response
+        # a 'write' callable.
 
-    def _finish_response(self, result):
+    def _finish_response(self, client, result):
         try:
             status, response_headers = self.headers_set
             response = 'HTTP/1.1 %s\r\n' % status
@@ -98,6 +98,6 @@ class WSGIWorker(sbn.Kernel):
                 '\n> %s' % line for line in response.splitlines()
             ), file=open('wsgisbn.log', 'a'))
             response_bytes = response.encode()
-            self.client_connection.sendall(response_bytes)
+            client.sendall(response_bytes)
         finally:
-            self.client_connection.close()
+            client.close()

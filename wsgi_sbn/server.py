@@ -1,6 +1,7 @@
 import socket
 import sbn
 from worker import WSGIWorker
+from utils import get_socket_args, init_socket
 
 class WSGIServer(sbn.Kernel):
 
@@ -9,32 +10,20 @@ class WSGIServer(sbn.Kernel):
     request_queue_size = 5
 
     def __init__(self, server_address, application):
+        self._create_server(server_address)
+        self.application = application
         super(WSGIServer, self).__init__()
-        self._init_server(server_address)
-        self._init_app(application)
 
-
-    def _init_server(self, server_address):
-        # Create a listening socket
-        self.listen_socket = socket.socket(
-            self.address_family,
-            self.socket_type
-        )
-        # Allow to reuse the same address
-        self.listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # Bind
-        self.listen_socket.bind(server_address)
-        # Activate
-        self.listen_socket.listen(self.request_queue_size)
-        # Get server host name and port
-        host, port = self.listen_socket.getsockname()[:2]
+    def _create_server(self, server_address):
+        listen_socket = socket.create_server(
+            server_address, family=self.address_family, backlog=self.request_queue_size, reuse_port=True)
+        
+        self.listen_socket_args = get_socket_args(listen_socket)
+        
+        # Get socket settings
+        host, port = listen_socket.getsockname()[:2]
         self.server_name = socket.getfqdn(host)
         self.server_port = port
-        # Return headers set by Web framework/Web application
-        self.headers_set = []
-
-    def _init_app(self, application):
-        self.application = application
 
     def act(self):
         self._serve_run()
@@ -43,11 +32,9 @@ class WSGIServer(sbn.Kernel):
         self._serve_run()
 
     def _serve_run(self):
-        listen_socket = self.listen_socket
+        listen_socket = init_socket(self.listen_socket_args)
         while True:
             print('>>>> Python (WSGI Server) [DEBUG]: Waiting connection', file=open('wsgisbn.log', 'a'))
-            #sbn.sleep(1000)
-            # New client connection
             try:
                 client_connection, client_address = listen_socket.accept()
             except Exception as e:
@@ -59,5 +46,5 @@ class WSGIServer(sbn.Kernel):
             break # TODO
 
     def _handle_request(self, client_connection):
-        worker = WSGIWorker(client_connection, self.application, self.server_name, self.server_port)
+        worker = WSGIWorker(get_socket_args(client_connection), self.application, self.server_name, self.server_port)
         sbn.upstream(self, worker, target=sbn.Target.Remote)
