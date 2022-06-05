@@ -20,7 +20,7 @@ class Main(sbn.Kernel):
         module, application = self.app_path.split(':')
 
         try:
-            self.module = importlib.import_module(module)
+            module = importlib.import_module(module)
             self.application = getattr(self.module, application)
         except Exception as e:
             print('>>>> Python (WSGI Main) [ERROR]: %s' % e, file=open('wsgisbn.log', 'a'))
