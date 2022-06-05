@@ -17,11 +17,11 @@ class Main(sbn.Kernel):
             print('>>>> Python (WSGI Main) [ERROR]: Provide a WSGI application object as module:callable', file=open('wsgisbn.log', 'a'))
             sys.exit()
         self.app_path = sys.argv[1]
-        module, application = self.app_path.split(':')
+        module_name, application_name = self.app_path.split(':')
 
         try:
-            module = importlib.import_module(module)
-            self.application = getattr(self.module, application)
+            module = importlib.import_module(module_name)
+            self.application = getattr(module, application_name)
         except Exception as e:
             print('>>>> Python (WSGI Main) [ERROR]: %s' % e, file=open('wsgisbn.log', 'a'))
             sys.exit()
